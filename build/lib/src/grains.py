@@ -43,7 +43,7 @@ class Grains(OrthoBox):
                 flag = False
         return flag
 
-    def makepolycrystal(self,names):
+    def makepolycrystal(self,names,prunecriteria=1.0):
         ''' Method for creating grains/crystallites in a simulation box resulting in a
         polycrystal configuration.
         
@@ -127,7 +127,7 @@ class Grains(OrthoBox):
         self.natoms = self.polycrystal['grainids'].shape[0]
 
         self.getasepolycrystal()
-        self.pruneoverlap()
+        self.pruneoverlap(criteria=prunecriteria)
 
     @staticmethod
     def getgrainspecies(mapchemsymtoid,crysatomnum):
@@ -144,12 +144,37 @@ class Grains(OrthoBox):
                                     cell = self.sidelens,
                                     pbc = [1,1,1])
         
-    def pruneoverlap(self,criteria=0.1):
+    def pruneoverlap(self,criteria=1.0):
         ''' TODO: remove atoms overlapping assume PBC conditions'''
         cutoff = neighborlist.natural_cutoffs(self.asepolycrystal)
         neighbors = neighborlist.NeighborList(cutoff,
                                                  self_interaction=False,
                                                  bothways=True)
         neighbors.update(self.asepolycrystal)
+        connectivity = neighbors.get_connectivity_matrix()
+        distances = neighborlist.get_distance_matrix(connectivity,limit=6)
+        removal = neighborlist.get_distance_indices(distances,criteria)
+        
+        isremoved = []
+        for r in removal:
+            m = len(r);
+            if m < 1:
+                continue
+            
+            rindex = np.random.randint(0,m-1)
+            if rindex in isremoved:
+                continue
+            
+            rslice = [atom.index for atom in self.asepolycrystal if atom.index == rindex]
+            del self.asepolycrystal[rslice]
+            isremoved.append(rindex)
+            print("Atom ID %i removed due to overlap!" %(rindex))
 
+
+        #self.polycrystal= {'grainids':np.concatenate(atomgrainids,axis=0),
+        #                   'species':np.concatenate(crystallitesspecies,axis=0),
+        #                   'ids':np.concatenate(crystallitesspeciesids,axis=0),
+        #                   'positions':np.concatenate(crystallites,axis=0)}
+        print(self.asepolycrystal.get_global_number_of_atoms())
+        #self.natoms = self.polycrystal['grainids'].shape[0]
         
