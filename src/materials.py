@@ -8,6 +8,7 @@ materials = {
      'basis' : [(0.0000e0,0.0000e0,0.0000e0)],
      'spacegroup' : 227
     },    
+<<<<<<< HEAD
     'Germanium':
     {'ref' : {'url':'http://aflow.org/material/?id=aflow:cf8cd087a16c463c'},
      'lengths' : [3.97e0,3.97e0,3.97e0],
@@ -17,6 +18,8 @@ materials = {
                 (0.7500e0,0.7500e0,0.7500e0)],
      'spacegroup' : 1
     },    
+=======
+>>>>>>> b1b2ab01c2bb2b0ccfa586e91701178bc6a8a7e8
     'SiO2-alpha-low':
     {'ref' : {'url':'http://aflow.org/CrystalDatabase/A2B_hP9_152_c_a.html'},
      'lengths':[4.914e0,4.914e0,5.406e0],
@@ -43,6 +46,7 @@ materials = {
      'basis' : [(0.2381e0,0.1109e0,0.1826e0),
                 (0.3047e0,0.3047e0,0.0000e0)],
      'spacegroup' : 92
+<<<<<<< HEAD
       },
     'Tungsten':
       {'ref' : {'url':'https://www.webelements.com/tungsten/crystal_structure.html'},
@@ -51,6 +55,8 @@ materials = {
      'species' : ['W'],
      'basis' : [(0.000e0,0.000e0,0.000e0)],
      'spacegroup' : 229
+=======
+>>>>>>> b1b2ab01c2bb2b0ccfa586e91701178bc6a8a7e8
      }
     }
 
