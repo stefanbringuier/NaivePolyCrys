@@ -20,17 +20,18 @@ class WriteData:
         fullfilename = self.filename+"."+self.extension
         f = open(fullfilename,'w')
         natoms = polycrystal.natoms
-
+        nspecies = polycrystal.nspecies
+        
         #Species from crystal for grain ID=1, one may want to modify so
         #that info of each grain crystal type is stored.
-        typecrys = polycrystal.graincrystal[0]
+        typecrys = polycrystal.graintypes[0]
         f.write('# %s %s Polycrystalline %s with %i grains\n' %(self.formt,
                                                              self.lammpsstyle,
-                                                             ''.join(typecrys.species),
-                                                              polycrystal.num)) 
+                                                             typecrys,
+                                                            polycrystal.numcrystallites)) 
         f.write('\n')
         f.write('%i atoms \n' %(natoms))
-        f.write('%i atom types \n' %len(typecrys.species))
+        f.write('%i atom types \n' %(nspecies))
 
         #Turn into generic function
         if polycrystal.boxshape == 'Orthorhombic':
@@ -42,8 +43,9 @@ class WriteData:
         f.write('Atoms \n')
         f.write('\n')
         for i in range(natoms):
-            gid = polycrystal.polycrystal['grainids'][i]
-            tid = polycrystal.polycrystal['ids'][i]
-            x,y,z = polycrystal.polycrystal['positions'][i,:]
+            gid = polycrystal.polycrystal.get_tags()[i]+1
+            ityp = polycrystal.polycrystal.get_chemical_symbols()[i]
+            tid = polycrystal.chemmap[ityp]
+            x,y,z = polycrystal.polycrystal.positions[i,:]
             f.write('%i %i %i %f %f %f \n' %(i+1,gid,tid,x,y,z))
         f.close()

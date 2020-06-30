@@ -30,6 +30,7 @@ class OrthoBox(Box):
         self.a1 = 90.00e0
         self.a2 = 90.00e0
         self.a3 = 90.00e0
+        self.angles = [self.a1,self.a2,self.a3]
         
     def _transform(self,size):
         matrix = np.matrix([[size[0],0,0],

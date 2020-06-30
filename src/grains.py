@@ -2,13 +2,15 @@ from random import randint
 from math import acos,pi
 import numpy as np
 from ase import Atoms
-from ase import neighborlist
+
 from simbox import OrthoBox
 from crystal import Crystal
+from polycrystal import Polycrystal
 
 class Grains(OrthoBox):
     def __init__(self,boxsize,ngrains,grainsize=0.5):
         super().__init__(boxsize)
+        self.boxsize = boxsize
         self.num = ngrains
         self.size = grainsize
         self.ids = []
@@ -42,26 +44,26 @@ class Grains(OrthoBox):
             if tmp_dist_square < dist_square:
                 flag = False
         return flag
-
+        
     def makepolycrystal(self,names,prunecriteria=1.0):
         ''' Method for creating grains/crystallites in a simulation box resulting in a
         polycrystal configuration.
         
         Input:
            names - list of material/phase for each grain (see src/materials.py)
-
         '''
-        minbond = 1.10 #Angstroms H-H
         numgrains = self.num
-        crystallites = []
-        crystallitesspecies = []
-        crystallitesspeciesids = []
-        atomgrainids = []
+
         assert numgrains == len(names)
+        graintypes = {gid:names[gid] for gid in range(numgrains)}
+        
+        polycrystal = Polycrystal(self.boxsize,numgrains,names,self.points)
+        polycrystal.setgraintypes(graintypes)
+        
         for gid,gcenter in enumerate(self.points):
+            print("-------------------------")
             print("Grain id: ", gid)
             self.ids.append(gid)
-
 
             # Naive approach: Generate mask crystal such that its bigger than the simulation
             # box. Then calculate mask crystal center of mass and shift mask so its center
@@ -75,9 +77,9 @@ class Grains(OrthoBox):
 
             chemsymbols = mask.crystal.get_chemical_symbols()
             mapchemsymtoid = {k:i+1 for i,k in enumerate(set(chemsymbols))}
-            print("-------chem:id-----------")
+            print("-------chemical:id--------")
             for s in mapchemsymtoid.keys():
-                print("%s %i" %(s,mapchemsymtoid[s]))
+                print("%s : %i" %(s,mapchemsymtoid[s]))
             print("-------------------------")
 
             comdiff = gcenter-mask.crystal.get_center_of_mass()
@@ -100,81 +102,13 @@ class Grains(OrthoBox):
 
                 if self.atom_in_grain(xyz,(gid,gcenter)) == True:
                     keep.append(atom)
-            
+
+            print("Number of atoms in cell: ", len(keep))
             print("Center of grain: ", self.points[gid])
+            print("-------------------------")
 
+            polycrystal.embedatoms(mask.crystal,gid,keep)
             
-            chemslice = [chemsymbols[k] for k in keep]
-            grainspecieids = self.getgrainspecies(mapchemsymtoid,chemslice)
-            crystallite = mask.crystal.positions[keep,:]
-
-            print("Number of atoms in cell: ", crystallite.shape[0])
-            print("Finished grain: ",gid)
-            print("------------------------------------")
-            crystallitesspecies.append(chemslice)
-            crystallitesspeciesids.append(grainspecieids)
-            crystallites.append(crystallite)
-            tmparry = np.empty(crystallite.shape[0],dtype=np.int32)
-            tmparry.fill(gid+1)
-            atomgrainids.append(tmparry)
-    
-        
-        self.polycrystal= {'grainids':np.concatenate(atomgrainids,axis=0),
-                           'species':np.concatenate(crystallitesspecies,axis=0),
-                           'ids':np.concatenate(crystallitesspeciesids,axis=0),
-                           'positions':np.concatenate(crystallites,axis=0)}
-                           
-        self.natoms = self.polycrystal['grainids'].shape[0]
-
-        self.getasepolycrystal()
-        self.pruneoverlap(criteria=prunecriteria)
-
-    @staticmethod
-    def getgrainspecies(mapchemsymtoid,crysatomnum):
-        ''' get a list of ids from a dictionary of atomic numbers 
-        in numpy vector array form'''
-        specieslist = [mapchemsymtoid[k] for k in crysatomnum]
-        speciesarry = np.reshape(specieslist,(len(specieslist),1))
-        return speciesarry
-    
-    def getasepolycrystal(self):
-        ''' construct ase version '''
-        self.asepolycrystal = Atoms(self.polycrystal['species'],
-                                    positions=self.polycrystal['positions'],
-                                    cell = self.sidelens,
-                                    pbc = [1,1,1])
-        
-    def pruneoverlap(self,criteria=1.0):
-        ''' TODO: remove atoms overlapping assume PBC conditions'''
-        cutoff = neighborlist.natural_cutoffs(self.asepolycrystal)
-        neighbors = neighborlist.NeighborList(cutoff,
-                                                 self_interaction=False,
-                                                 bothways=True)
-        neighbors.update(self.asepolycrystal)
-        connectivity = neighbors.get_connectivity_matrix()
-        distances = neighborlist.get_distance_matrix(connectivity,limit=6)
-        removal = neighborlist.get_distance_indices(distances,criteria)
-        
-        isremoved = []
-        for r in removal:
-            m = len(r);
-            if m < 1:
-                continue
-            
-            rindex = np.random.randint(0,m-1)
-            if rindex in isremoved:
-                continue
-            
-            rslice = [atom.index for atom in self.asepolycrystal if atom.index == rindex]
-            del self.asepolycrystal[rslice]
-            isremoved.append(rindex)
-            print("Atom ID %i removed due to overlap!" %(rindex))
-
-
-        #self.polycrystal= {'grainids':np.concatenate(atomgrainids,axis=0),
-        #                   'species':np.concatenate(crystallitesspecies,axis=0),
-        #                   'ids':np.concatenate(crystallitesspeciesids,axis=0),
-        #                   'positions':np.concatenate(crystallites,axis=0)}
-        print(self.asepolycrystal.get_global_number_of_atoms())
-        #self.natoms = self.polycrystal['grainids'].shape[0]
-        
+        polycrystal.compress()
+        polycrystal.pruneoverlap(criteria=prunecriteria)
+        return polycrystal
