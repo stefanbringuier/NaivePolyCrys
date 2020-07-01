@@ -1,4 +1,6 @@
-# Naive Polycrystal Atomic Configuration Tool [![DOI](https://zenodo.org/badge/274730892.svg)](https://zenodo.org/badge/latestdoi/274730892)
+# Naive Polycrystal Atomic Configuration Tool [![DOI](https://zenodo.org/badge/274730892.svg)](https://zenodo.org/badge/latestdoi/274730892) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+
 
 Generate, naively, a polycrystalline sample using shortest Euclidean distance criteria ([i.e., Voronoi diagram](https://en.wikipedia.org/wiki/Voronoi_diagram)). The current version is capable of generating a LAMMPS configuration file given crystal types, number of grains, and box dimensions. Specifically, one can generate a polycrystalline sample that contains grains which are of a different crystal type (i.e., Si+Ge). This is useful for looking at multiphase [microstructures](https://en.wikipedia.org/wiki/Microstructure).
 
